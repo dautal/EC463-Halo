@@ -1,1 +1,1 @@
-# EC463-HALO
+# Halo - a Smart Drink Protector
