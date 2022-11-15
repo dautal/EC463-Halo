@@ -39,12 +39,13 @@ void loop() {
     // Serial.print(y);
     // Serial.print('\t');
     // Serial.println(z);
-    if ( (z > 0.7 && z < 1.3) && (x > -0.5 && x < 0.5) && (y > -0.5 && y < 0.5) ){
-        Serial.println("Cap is on");
-    }
-    else{
-        Serial.println("Cap might have been taken off");
-    }
+    // if ( (z > 0.7 && z < 1.3) && (x > -0.5 && x < 0.5) && (y > -0.5 && y < 0.5) ){
+    //     Serial.println("Cap is on");
+    // }
+    // else{
+    //     Serial.println("Cap might have been taken off");
+    //     exit(0);
+    // }
 
   }
 }
