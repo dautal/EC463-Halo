@@ -6,7 +6,6 @@ BLEService VoltageService("75340d9a-b70d-11ed-afa1-0242ac120002");
 // Bluetooth® Low Energy Battery Level Characteristic
 BLEUnsignedCharCharacteristic VoltageChar("84244464-b70d-11ed-afa1-0242ac120002",  // standard 16-bit characteristic UUID
     BLERead | BLENotify); // remote clients will be able to get notifications if this characteristic changes
-int oldVoltage = 0;  // last battery level reading from analog input
 long previousMillis = 0;
 
 #define AVG_WINDOW 10
@@ -26,6 +25,9 @@ int controlFlag = 1;  // inital mode state
 float ADCconversion = 0.00488;
 float myAverage;
 float voltage;
+float current_volt=0;
+float oldVoltage = 0;  // last battery level reading from analog input
+
 
 void setup() {
   Serial.begin(9600); // initialize serial communication
@@ -87,7 +89,10 @@ void loop() {
       // if 200ms have passed, check the battery level:
       if (currentMillis - previousMillis >= 200) {
         previousMillis = currentMillis;
-        updateVoltage();
+        bool val=updateVoltage();
+        if (val==false) {
+          Serial.print("Cover Gone");
+        }
       }
     }
 
@@ -127,7 +132,7 @@ float computeAvg(int *myArrg)
   }
     }
 
-void updateVoltage() {
+bool updateVoltage() {
   /* Read the current voltage level on the A0 analog input pin.
      This is used here to simulate the charge level of a battery.
   */
@@ -138,6 +143,10 @@ void updateVoltage() {
     Serial.print("Voltage % is now: "); // print it
     Serial.println(voltage/100);
     VoltageChar.writeValue(voltage);  // and update the battery level characteristic
+    if (abs(oldVoltage-voltage>0.2)) {
+      return false;
+    }
     oldVoltage = voltage;           // save the level for next comparison
+    return true;
   }
 }
