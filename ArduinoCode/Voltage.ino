@@ -31,7 +31,7 @@ float oldVoltage;  // last battery level reading from analog input
 
 void setup() {
   Serial.begin(9600); // initialize serial communication
-  while (!Serial);
+  // while (!Serial);
 
   pinMode(LED_BUILTIN, OUTPUT); // initialize the built-in LED pin to indicate when a central is connected
 
@@ -69,40 +69,41 @@ void loop() {
   voltage = myAverage * ADCconversion * 100;
   // Serial.println(voltage/100);
   // broadcast voltage over Bluetooth
-  VoltageChar.writeValue(voltage);
+  //VoltageChar.writeValue(voltage);
 
   // wait for a Bluetooth® Low Energy central
   BLEDevice central = BLE.central();
 
   // if a central is connected to the peripheral:
-  // if (central) {
-    if (1){
-    // Serial.print("Connected to central: ");
+  if (central) {
+    // if (1){
+    Serial.print("Connected to central: ");
     // print the central's BT address:
-    // Serial.println(central.address());
+    Serial.println(central.address());
     // turn on the LED to indicate the connection:
     digitalWrite(LED_BUILTIN, HIGH);
 
     // check the battery level every 200ms
     // while the central is connected:
-    // while (central.connected()) {
-    while(1){
+    while (central.connected()) {
+    // while(1){
       long currentMillis = millis();
       // if 200ms have passed, check the battery level:
       if (currentMillis - previousMillis >= 200) {
         previousMillis = currentMillis;
-        bool val = updateVoltage();
-        if (val==false) {
+        int val = updateVoltage();
+        if (val==0) {
           Serial.println("Cover Gone");
-          exit(0);
+          // exit(0);
         }
+        VoltageChar.writeValue(val);  
       }
     }
 
     // when the central disconnects, turn off the LED:
     digitalWrite(LED_BUILTIN, LOW);
-    // Serial.print("Disconnected from central: ");
-    // Serial.println(central.address());
+    Serial.print("Disconnected from central: ");
+    Serial.println(central.address());
   }
 }
 
@@ -135,7 +136,7 @@ float computeAvg(int *myArrg)
   }
     }
 
-bool updateVoltage() {
+int updateVoltage() {
   /* Read the current voltage level on the A0 analog input pin.
      This is used here to simulate the charge level of a battery.
   */
@@ -146,9 +147,9 @@ bool updateVoltage() {
   voltage = myAverage * ADCconversion * 100;
   if (voltage != oldVoltage) {      // if the battery level has changed
 
-    VoltageChar.writeValue(voltage);  // and update the battery level characteristic
+    //VoltageChar.writeValue(voltage);  // and update the battery level characteristic
     if (abs(oldVoltage-voltage)>4) {
-      return false;
+      return 0;
     }
   }
   Serial.print("Voltage: ");
@@ -156,5 +157,5 @@ bool updateVoltage() {
   Serial.print("Old volt: ");
   Serial.println(oldVoltage);
 
-  return true;
+  return 1;
 }
