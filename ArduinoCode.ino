@@ -3,14 +3,14 @@
 
 // Bluetooth® Low Energy Battery Service
 BLEService VoltageService("75340d9a-b70d-11ed-afa1-0242ac120002");
-BLEUnsignedCharCharacteristic VoltageChar("84244464-b70d-11ed-afa1-0242ac120002", BLERead | BLENotify);
+BLEStringCharacteristic VoltageChar("84244464-b70d-11ed-afa1-0242ac120002", BLERead | BLENotify, 20);
 
 
 #define AVG_WINDOW 10
 
 float computeAvg(int *myArrg);
 void collectPoints(int sampleInterval, int pinNum,int pinNumN, int *myArrg);
-int updateVoltage();
+void updateVoltage();
 
 //variables
 long previousMillis = 0;
@@ -23,9 +23,6 @@ float ADCconversion = 0.00488;
 float myAverage;
 float voltage;
 float ax, ay, az; // variables to store accelerometer readings
-float accelThreshold = 1.2; // threshold to detect if the cup is down
-bool cupIsDown = false; // variable to track if the cup is down
-
 
 void setup() {
   Serial.begin(9600); // initialize serial communication
@@ -36,11 +33,11 @@ void setup() {
     Serial.println("starting BLE failed!");
     while (1);
   }
-  BLE.setLocalName("VoltageMonitor");
+  BLE.setLocalName("Halo_8"); //set name here
   BLE.setAdvertisedService(VoltageService); // add the service UUID
   VoltageService.addCharacteristic(VoltageChar); // add the battery level characteristic
   BLE.addService(VoltageService); // Add the battery service
-  VoltageChar.writeValue(1); // set initial value for this characteristic
+  VoltageChar.writeValue("0"); // set initial value for this characteristic
 
   // start advertising
   BLE.advertise();
@@ -53,8 +50,6 @@ void setup() {
 }
 
 void loop() {
-  //delay(dispRefresh);
-
   // wait for a Bluetooth® Low Energy central
   BLEDevice central = BLE.central();
 
@@ -67,13 +62,9 @@ void loop() {
 
     while (BLE.connected()) {
       unsigned long currentMillis = millis();
-      if (currentMillis - previousMillis >= 500) {
+      if (currentMillis - previousMillis >= 300) {
         previousMillis = currentMillis;
-        int val = updateVoltage();
-        if (val==0) {
-          Serial.println("Cover Gone");
-        }
-        VoltageChar.writeValue(val);  
+        updateVoltage();
       }
     }
 
@@ -110,27 +101,18 @@ void collectPoints(int sampleInterval, int pinNumP, int pinNumN, int *myArrg) {
   }
 }
 
-int updateVoltage() {
+void updateVoltage() {
   collectPoints(sampleInterval, voltInputPinP,voltInputPinN, ADCRaw);
   myAverage = computeAvg(ADCRaw);
   float newVoltage = myAverage * ADCconversion * 100;
   IMU.readAcceleration(ax, ay, az);
-  Serial.print("Acceleration: ");
   Serial.println(az);
-  if (az>0.9 && az<1.1) { // check if the cup is down based on accelerometer reading
-    cupIsDown = true;
-  } else {
-    cupIsDown = false;
-  }
-  if (cupIsDown && abs(voltage - newVoltage) > 5) { // check if the voltage has changed by 2.8 or more
-    voltage = newVoltage;
-    return 0; 
-  } else {
-    voltage = newVoltage;
-    Serial.print("Voltage: ");
-    Serial.println(newVoltage);
-    Serial.print("Old volt: ");
-    Serial.println(voltage);
-    return 1; 
-  }
+  voltage = newVoltage;
+  String data = String(voltage) + "," + String(az);
+  VoltageChar.writeValue(data);
+  Serial.println(data);
+  /*Serial.print("Voltage: ");
+  Serial.println(newVoltage);
+  Serial.print("Old volt: ");
+  Serial.println(voltage);*/
 }
